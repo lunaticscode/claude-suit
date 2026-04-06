@@ -288,7 +288,27 @@ export const TRIBE_API = {
 - **CVA** (Class Variance Authority) - 컴포넌트 variant
 - **cn()** 유틸리티 (clsx + tailwind-merge)
 
-### 6.2 스타일링 규칙
+### 6.2 공통 컴포넌트 규칙
+
+> Button, Dialog, Drawer, Select, Tabs, Tooltip, Popover 등 **공통 UI 컴포넌트는 shadcn/ui를 적극 활용**한다.
+> 직접 구현하기 전에 shadcn/ui에 해당 컴포넌트가 있는지 먼저 확인하고, 있다면 그것을 기반으로 사용한다.
+
+- **shadcn/ui 컴포넌트 우선 사용**: 새 공통 컴포넌트가 필요할 때, shadcn/ui에서 제공하는지 먼저 확인
+- **커스터마이징은 `_custom/` 폴더에서**: shadcn/ui 원본은 `components/ui/`에 유지하고, 프로젝트 전용 확장은 `components/ui/_custom/`에 작성
+- **래핑보다 조합**: shadcn/ui 컴포넌트를 불필요하게 래핑하지 말고, props와 `cn()`으로 스타일만 확장
+
+```typescript
+// O: shadcn/ui 컴포넌트를 직접 사용
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+
+// X: shadcn/ui에 있는 걸 직접 구현하지 않는다
+const CustomButton = ({ children }) => (
+  <button className="rounded px-4 py-2 bg-primary">{children}</button>
+);
+```
+
+### 6.3 스타일링 규칙
 
 ```typescript
 // cn() 으로 조건부 클래스 결합
