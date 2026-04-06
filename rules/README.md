@@ -7,15 +7,19 @@
 
 ## 파일 목록
 
-### frontend-structure.md
+### frontend-nextjs-structure.md
 
 Next.js App Router 기반 프론트엔드 폴더 구조, 데이터 흐름, Import 규칙, 기술 스택.
+
+### frontend-vite-structure.md
+
+Vite + React SPA 기반 프론트엔드 폴더 구조, 데이터 흐름, Import 규칙, 기술 스택.
 
 ### backend-structure.md
 
 Express + TypeScript 기반 백엔드 폴더 구조, 데이터 흐름, Import 규칙, 기술 스택.
 
-### frontend-conventions.md
+### frontend-nextjs-conventions.md
 
 TypeScript + Next.js App Router 기반 프론트엔드 컨벤션.
 
@@ -28,6 +32,22 @@ TypeScript + Next.js App Router 기반 프론트엔드 컨벤션.
 - API Response Validation (Zod safeParse)
 - 에러 핸들링
 - 테스트 (Jest + React Testing Library)
+
+### frontend-vite-conventions.md
+
+TypeScript + Vite + React SPA 기반 프론트엔드 컨벤션.
+
+- 컴포넌트 2계층 아키텍처 (Page → Widget → Feature)
+- 네이밍 컨벤션 (파일, 변수, 타입)
+- 라우팅 (React Router v7 + lazy 코드 스플리팅)
+- 데이터 패칭 패턴 (React Query useQuery/useMutation)
+- 상태 관리 전략
+- 스타일링 (Tailwind CSS v4 + shadcn/ui)
+- 폼 패턴 (react-hook-form + Zod)
+- API Response Validation (Zod safeParse)
+- 에러 핸들링
+- 환경 변수 (VITE_ 접두사, import.meta.env)
+- 테스트 (Vitest + React Testing Library)
 
 ### backend-conventions.md
 

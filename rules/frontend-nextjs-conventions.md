@@ -136,35 +136,35 @@ export const SessionCard = ({ session, onSelect }: SessionCardProps) => {
 
 ### 3.1 파일 & 폴더
 
-| 대상 | 규칙 | 예시 |
-|------|------|------|
-| 컴포넌트 파일 | PascalCase | `TribeCard.tsx`, `SessionTimeline.tsx` |
-| 유틸/훅/서비스 | camelCase 또는 kebab-case | `api-client.ts`, `useRestaurants.ts` |
-| 타입 파일 | kebab-case + `.type.ts` | `tribe.type.ts`, `challenge.type.ts` |
-| 서비스 파일 | kebab-case + `.service.ts` | `tribe.service.ts` |
-| 상수 파일 | kebab-case | `api-cache.ts`, `filter.ts` |
-| 폴더 | camelCase 또는 kebab-case | `features/`, `shared/` |
+| 대상           | 규칙                       | 예시                                   |
+| -------------- | -------------------------- | -------------------------------------- |
+| 컴포넌트 파일  | PascalCase                 | `TribeCard.tsx`, `SessionTimeline.tsx` |
+| 유틸/훅/서비스 | camelCase 또는 kebab-case  | `api-client.ts`, `useRestaurants.ts`   |
+| 타입 파일      | kebab-case + `.type.ts`    | `tribe.type.ts`, `challenge.type.ts`   |
+| 서비스 파일    | kebab-case + `.service.ts` | `tribe.service.ts`                     |
+| 상수 파일      | kebab-case                 | `api-cache.ts`, `filter.ts`            |
+| 폴더           | camelCase 또는 kebab-case  | `features/`, `shared/`                 |
 
 ### 3.2 변수 & 함수
 
-| 대상 | 규칙 | 예시 |
-|------|------|------|
-| 일반 변수 | camelCase | `tribes`, `selectedDate` |
-| 상수 | SCREAMING_SNAKE_CASE | `STALE_TIME`, `DEFAULT_ERROR_CODE` |
-| Boolean | is/has/can 접두사 | `isLoading`, `hasMore`, `canParticipate` |
-| 이벤트 핸들러 | handle 접두사 | `handleSubmit`, `handleTabChange` |
+| 대상          | 규칙                 | 예시                                      |
+| ------------- | -------------------- | ----------------------------------------- |
+| 일반 변수     | camelCase            | `tribes`, `selectedDate`                  |
+| 상수          | SCREAMING_SNAKE_CASE | `STALE_TIME`, `DEFAULT_ERROR_CODE`        |
+| Boolean       | is/has/can 접두사    | `isLoading`, `hasMore`, `canParticipate`  |
+| 이벤트 핸들러 | handle 접두사        | `handleSubmit`, `handleTabChange`         |
 | Server Action | 동사 + Action 접미사 | `joinTribeAction`, `createSessionsAction` |
-| 커스텀 훅 | use 접두사 | `useTribeList`, `useRestaurants` |
-| API 호출 함수 | 동사 + 명사 | `getTribeList`, `updateProfile` |
+| 커스텀 훅     | use 접두사           | `useTribeList`, `useRestaurants`          |
+| API 호출 함수 | 동사 + 명사          | `getTribeList`, `updateProfile`           |
 
 ### 3.3 타입 & 인터페이스
 
-| 대상 | 규칙 | 예시 |
-|------|------|------|
-| 타입 | PascalCase | `Tribe`, `TaskStatus` |
-| Props 타입 | 컴포넌트명 + Props | `TribeCardProps`, `SessionFormProps` |
-| Response 타입 | 동사 + Response | `GetTribeListResponse` |
-| Zod 추론 타입 | z.infer 사용 | `type FormData = z.infer<typeof schema>` |
+| 대상          | 규칙               | 예시                                     |
+| ------------- | ------------------ | ---------------------------------------- |
+| 타입          | PascalCase         | `Tribe`, `TaskStatus`                    |
+| Props 타입    | 컴포넌트명 + Props | `TribeCardProps`, `SessionFormProps`     |
+| Response 타입 | 동사 + Response    | `GetTribeListResponse`                   |
+| Zod 추론 타입 | z.infer 사용       | `type FormData = z.infer<typeof schema>` |
 
 ### 3.4 type vs interface 기준
 
@@ -265,14 +265,14 @@ export const TRIBE_API = {
 
 ## 5. 상태 관리 전략
 
-| 관심사 | 방법 |
-|--------|------|
-| 서버 데이터 | React Query + Next.js Data Cache |
-| 폼 상태 | react-hook-form + Zod |
-| UI 상태 (모달, 드로어) | 로컬 useState |
-| 인증 | Cookie (httpOnly JWT) |
-| 페이지네이션/필터 | URL Search Params |
-| 테마 | next-themes |
+| 관심사                 | 방법                             |
+| ---------------------- | -------------------------------- |
+| 서버 데이터            | React Query + Next.js Data Cache |
+| 폼 상태                | react-hook-form + Zod            |
+| UI 상태 (모달, 드로어) | 로컬 useState                    |
+| 인증                   | Cookie (httpOnly JWT)            |
+| 페이지네이션/필터      | URL Search Params                |
+| 테마                   | next-themes                      |
 
 > Zustand, Redux 등 글로벌 상태 라이브러리는 사용하지 않음.
 > React Query와 Server Actions 조합으로 대부분의 서버 상태를 관리.
@@ -357,7 +357,9 @@ const methods = useForm<SessionCreateFormData>({
 
 const onSubmit = async (data: SessionCreateFormData) => {
   const result = await createSessionsAction(data);
-  if (result.success) { /* 성공 처리 */ }
+  if (result.success) {
+    /* 성공 처리 */
+  }
 };
 ```
 
@@ -424,16 +426,20 @@ export const tribeListResponseSchema = z.object({
 });
 
 export const tribeDetailResponseSchema = tribeSchema.extend({
-  members: z.array(z.object({
-    _id: z.string(),
-    name: z.string(),
-    profileImage: z.string().nullable(),
-  })),
-  challenges: z.array(z.object({
-    _id: z.string(),
-    title: z.string(),
-    status: z.enum(["active", "completed", "upcoming"]),
-  })),
+  members: z.array(
+    z.object({
+      _id: z.string(),
+      name: z.string(),
+      profileImage: z.string().nullable(),
+    }),
+  ),
+  challenges: z.array(
+    z.object({
+      _id: z.string(),
+      title: z.string(),
+      status: z.enum(["active", "completed", "upcoming"]),
+    }),
+  ),
 });
 ```
 
@@ -442,7 +448,10 @@ export const tribeDetailResponseSchema = tribeSchema.extend({
 ```typescript
 // services/tribe.service.ts
 import { validateResponse } from "@/src/validators";
-import { tribeListResponseSchema, tribeDetailResponseSchema } from "@/src/validators/tribe";
+import {
+  tribeListResponseSchema,
+  tribeDetailResponseSchema,
+} from "@/src/validators/tribe";
 
 export const getTribeList = async () => {
   const data = await apiClient.get(TRIBE_API.LIST, {
@@ -464,7 +473,10 @@ export const getTribeDetail = async (id: string) => {
 ```typescript
 // types/tribe.type.ts
 import type { z } from "zod";
-import type { tribeSchema, tribeListResponseSchema } from "@/src/validators/tribe";
+import type {
+  tribeSchema,
+  tribeListResponseSchema,
+} from "@/src/validators/tribe";
 
 // 스키마에서 타입 추론 → 별도 타입 정의 불필요
 export type Tribe = z.infer<typeof tribeSchema>;
@@ -559,19 +571,19 @@ export const joinTribeAction = async (...) => { ... };
 
 ## 12. 주요 의존성 스택
 
-| 카테고리 | 라이브러리 |
-|----------|-----------|
-| 프레임워크 | Next.js 16, React 19 |
-| 스타일링 | Tailwind CSS v4, shadcn/ui, CVA |
-| 서버 상태 | @tanstack/react-query v5 |
-| 폼 | react-hook-form, @hookform/resolvers |
-| 유효성 검증 | Zod |
-| 아이콘 | lucide-react |
-| 토스트 | sonner |
-| 날짜 | date-fns |
-| 애니메이션 | framer-motion |
-| JWT | jose |
-| 테스트 | Jest, React Testing Library |
+| 카테고리    | 라이브러리                           |
+| ----------- | ------------------------------------ |
+| 프레임워크  | Next.js 16, React 19                 |
+| 스타일링    | Tailwind CSS v4, shadcn/ui, CVA      |
+| 서버 상태   | @tanstack/react-query v5             |
+| 폼          | react-hook-form, @hookform/resolvers |
+| 유효성 검증 | Zod                                  |
+| 아이콘      | lucide-react                         |
+| 토스트      | sonner                               |
+| 날짜        | date-fns                             |
+| 애니메이션  | framer-motion                        |
+| JWT         | jose                                 |
+| 테스트      | Jest, React Testing Library          |
 
 ---
 
@@ -579,12 +591,12 @@ export const joinTribeAction = async (...) => { ... };
 
 ### 13.1 테스트 스택
 
-| 도구 | 용도 |
-|------|------|
-| Jest | 테스트 러너 |
-| React Testing Library | 컴포넌트 렌더링 & 인터랙션 테스트 |
-| @testing-library/jest-dom | DOM assertion 매처 확장 |
-| MSW (Mock Service Worker) | API 요청 모킹 (선택) |
+| 도구                      | 용도                              |
+| ------------------------- | --------------------------------- |
+| Jest                      | 테스트 러너                       |
+| React Testing Library     | 컴포넌트 렌더링 & 인터랙션 테스트 |
+| @testing-library/jest-dom | DOM assertion 매처 확장           |
+| MSW (Mock Service Worker) | API 요청 모킹 (선택)              |
 
 ### 13.2 폴더 구조
 
@@ -618,13 +630,13 @@ src/
 
 ### 13.3 테스트 대상 & 기준
 
-| 대상 | 위치 | 테스트 기준 |
-|------|------|-------------|
-| **유틸 함수** | `libs/`, `shared/utils/` | 입출력 검증, 엣지 케이스, 에러 케이스 |
-| **Zod 스키마** | `validators/` | 유효 데이터 통과, 무효 데이터 실패, 에러 메시지 확인 |
-| **서비스 레이어** | `services/` | API mock → 응답 파싱 → validateResponse 검증 |
-| **커스텀 훅** | `hooks/`, `features/*/hooks/` | 반환값, 상태 변이, 콜백 호출 검증 |
-| **컴포넌트** | `features/*/ui/` | 조건부 렌더링, 이벤트 핸들러, props 반영 |
+| 대상              | 위치                          | 테스트 기준                                          |
+| ----------------- | ----------------------------- | ---------------------------------------------------- |
+| **유틸 함수**     | `libs/`, `shared/utils/`      | 입출력 검증, 엣지 케이스, 에러 케이스                |
+| **Zod 스키마**    | `validators/`                 | 유효 데이터 통과, 무효 데이터 실패, 에러 메시지 확인 |
+| **서비스 레이어** | `services/`                   | API mock → 응답 파싱 → validateResponse 검증         |
+| **커스텀 훅**     | `hooks/`, `features/*/hooks/` | 반환값, 상태 변이, 콜백 호출 검증                    |
+| **컴포넌트**      | `features/*/ui/`              | 조건부 렌더링, 이벤트 핸들러, props 반영             |
 
 ### 13.4 유틸 함수 테스트
 
@@ -675,7 +687,10 @@ describe("tribeSchema", () => {
   });
 
   it("잘못된 타입 시 실패한다", () => {
-    const result = tribeSchema.safeParse({ ...validTribe, memberCount: "five" });
+    const result = tribeSchema.safeParse({
+      ...validTribe,
+      memberCount: "five",
+    });
     expect(result.success).toBe(false);
   });
 });
@@ -815,7 +830,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     formats: ["image/webp"],
-    remotePatterns: [/* S3, CDN 등 */],
+    remotePatterns: [
+      /* S3, CDN 등 */
+    ],
   },
 };
 ```
