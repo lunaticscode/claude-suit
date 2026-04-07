@@ -547,6 +547,8 @@ import { cn } from "@/src/libs/utils";
 import { SubComponent } from "./SubComponent";
 ```
 
+> Import 경계는 `eslint-plugin-boundaries` 로 강제된다. 자세한 정책은 §16 참조.
+
 ---
 
 ## 11. Export 규칙
@@ -866,3 +868,118 @@ export default [
   { ignores: [".next/", "out/", "build/"] },
 ];
 ```
+
+---
+
+## 16. Lint 기반 경계(Boundaries) 강제
+
+> `eslint-plugin-boundaries` 로 폴더 구조 = 아키텍처 경계를 **컴파일타임이 아닌 린트 단계**에서 강제한다.
+> 컨벤션 문서로 합의한 3계층(Route → Widget → Feature)과 leaf 레이어(shared/libs/validators)를 사람의 리뷰가 아닌 도구로 보장하는 것이 목적이다.
+
+### 16.1 설치
+
+```bash
+pnpm add -D eslint-plugin-boundaries
+```
+
+### 16.2 레이어 정의
+
+| element       | 경로 패턴                    | 역할                            |
+| ------------- | ---------------------------- | ------------------------------- |
+| `app`         | `app/**`                     | Next.js 라우팅 진입(파일시스템) |
+| `route`       | `src/routes/*/**`            | RSC 데이터 패칭 계층            |
+| `widget`      | `src/widgets/*/**`           | Client Container                |
+| `feature`     | `src/features/*/**`          | 도메인 모듈 (capture: 도메인명) |
+| `shared`      | `src/shared/**`              | 공통 코드                       |
+| `service`     | `src/services/**`            | API 호출 레이어                 |
+| `lib`         | `src/libs/**`                | 라이브러리 래퍼 (leaf)          |
+| `validator`   | `src/validators/**`          | Zod 스키마 (leaf)               |
+| `type`        | `src/types/**`               | 타입 정의 (leaf)                |
+| `provider`    | `src/providers/**`           | Context Provider                |
+| `ui`          | `components/ui/**`           | shadcn/ui 컴포넌트 (leaf)       |
+
+### 16.3 허용 매트릭스
+
+| from \ to     | app | route | widget | feature | shared | service | lib | validator | type | provider | ui  |
+| ------------- | :-: | :---: | :----: | :-----: | :----: | :-----: | :-: | :-------: | :--: | :------: | :-: |
+| **app**       |  -  |   ✅  |   -    |    -    |   ✅   |    -    | ✅  |    ✅     |  ✅  |    ✅    | ✅  |
+| **route**     |  -  |   -   |   ✅   |   ✅    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    ✅    | ✅  |
+| **widget**    |  -  |   -   |   -    |   ✅    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **feature**   |  -  |   -   |   -    | 🟡 same |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **shared**    |  -  |   -   |   -    |    -    |   ✅   |    -    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **service**   |  -  |   -   |   -    |    -    |   ✅   |    -    | ✅  |    ✅     |  ✅  |    -     |  -  |
+| **provider**  |  -  |   -   |   -    |    -    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **lib**       |  -  |   -   |   -    |    -    |   -    |    -    | ✅  |     -     |  ✅  |    -     |  -  |
+| **validator** |  -  |   -   |   -    |    -    |   -    |    -    |  -  |    ✅     |  ✅  |    -     |  -  |
+| **ui**        |  -  |   -   |   -    |    -    |   -    |    -    | ✅  |     -     |  -   |    -     |  -  |
+
+> 🟡 `feature → feature` 는 **같은 도메인 내부**(capture된 이름이 동일할 때)만 허용한다. 도메인 간 횡단 import는 금지.
+
+### 16.4 ESLint 설정 (eslint.config.mjs 보강)
+
+```javascript
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
+import boundaries from "eslint-plugin-boundaries";
+
+export default [
+  ...nextCoreWebVitals,
+  ...nextTypescript,
+  {
+    plugins: { boundaries },
+    settings: {
+      "boundaries/include": ["app/**/*", "src/**/*", "components/**/*"],
+      "boundaries/elements": [
+        { type: "app",       pattern: "app/**" },
+        { type: "ui",        pattern: "components/ui/**" },
+        { type: "route",     pattern: "src/routes/*/**" },
+        { type: "widget",    pattern: "src/widgets/*/**" },
+        { type: "feature",   pattern: "src/features/*/**", capture: ["domain"] },
+        { type: "shared",    pattern: "src/shared/**" },
+        { type: "service",   pattern: "src/services/**" },
+        { type: "lib",       pattern: "src/libs/**" },
+        { type: "validator", pattern: "src/validators/**" },
+        { type: "type",      pattern: "src/types/**" },
+        { type: "provider",  pattern: "src/providers/**" },
+      ],
+    },
+    rules: {
+      "boundaries/no-unknown": "error",
+      "boundaries/no-unknown-files": "error",
+      "boundaries/element-types": [
+        "error",
+        {
+          default: "disallow",
+          rules: [
+            { from: "app",       allow: ["route", "shared", "lib", "validator", "type", "provider", "ui"] },
+            { from: "route",     allow: ["widget", "feature", "shared", "service", "lib", "validator", "type", "provider", "ui"] },
+            { from: "widget",    allow: ["feature", "shared", "service", "lib", "validator", "type", "ui"] },
+            // 같은 도메인의 feature 만 import 가능
+            {
+              from: "feature",
+              allow: [
+                ["feature", { domain: "${from.domain}" }],
+                "shared", "service", "lib", "validator", "type", "ui",
+              ],
+            },
+            { from: "shared",    allow: ["shared", "lib", "validator", "type", "ui"] },
+            { from: "service",   allow: ["shared", "lib", "validator", "type"] },
+            { from: "provider",  allow: ["shared", "service", "lib", "validator", "type", "ui"] },
+            { from: "lib",       allow: ["lib", "type"] },
+            { from: "validator", allow: ["validator", "type"] },
+            { from: "ui",        allow: ["lib"] },
+          ],
+        },
+      ],
+    },
+  },
+  { ignores: [".next/", "out/", "build/"] },
+];
+```
+
+### 16.5 위반 시 해결 가이드
+
+- ❌ `feature/tribe → feature/challenge` 직접 import → ✅ 공통 로직을 `shared/` 로 끌어올리거나, 상위 `widget`에서 두 feature를 조합
+- ❌ `shared → feature` import → ✅ feature가 shared의 인터페이스를 구현하도록 의존성 역전
+- ❌ `service → feature` import → ✅ service는 도메인을 모름. 호출자(feature/widget)에서 조합
+- ❌ `lib → shared` import → ✅ libs는 외부 라이브러리 래퍼. 도메인/공통 코드를 모름

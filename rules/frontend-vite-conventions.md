@@ -618,6 +618,8 @@ import { cn } from "@/libs/utils";
 import { SubComponent } from "./SubComponent";
 ```
 
+> Import 경계는 `eslint-plugin-boundaries` 로 강제된다. 자세한 정책은 §17 참조.
+
 ---
 
 ## 12. Export 규칙
@@ -874,3 +876,125 @@ export default tseslint.config(
   },
 );
 ```
+
+---
+
+## 17. Lint 기반 경계(Boundaries) 강제
+
+> `eslint-plugin-boundaries` 로 폴더 구조 = 아키텍처 경계를 린트 단계에서 강제한다.
+> Page → Widget → Feature 흐름과 leaf 레이어(shared/libs/validators)를 도구로 보장한다.
+
+### 17.1 설치
+
+```bash
+pnpm add -D eslint-plugin-boundaries
+```
+
+### 17.2 레이어 정의
+
+| element     | 경로 패턴               | 역할                            |
+| ----------- | ----------------------- | ------------------------------- |
+| `route`     | `src/routes/*/**`       | React Router lazy 진입 페이지   |
+| `widget`    | `src/widgets/*/**`      | Container (상태/데이터 연결)    |
+| `feature`   | `src/features/*/**`     | 도메인 모듈 (capture: 도메인명) |
+| `shared`    | `src/shared/**`         | 공통 코드                       |
+| `service`   | `src/services/**`       | API 호출 레이어                 |
+| `lib`       | `src/libs/**`           | 라이브러리 래퍼 (leaf)          |
+| `validator` | `src/validators/**`     | Zod 스키마 (leaf)               |
+| `type`      | `src/types/**`          | 타입 정의 (leaf)                |
+| `provider`  | `src/providers/**`      | Context Provider                |
+| `ui`        | `src/components/ui/**`  | shadcn/ui 컴포넌트 (leaf)       |
+
+### 17.3 허용 매트릭스
+
+| from \ to     | route | widget | feature | shared | service | lib | validator | type | provider | ui  |
+| ------------- | :---: | :----: | :-----: | :----: | :-----: | :-: | :-------: | :--: | :------: | :-: |
+| **route**     |   -   |   ✅   |   ✅    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    ✅    | ✅  |
+| **widget**    |   -   |   -    |   ✅    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **feature**   |   -   |   -    | 🟡 same |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **shared**    |   -   |   -    |    -    |   ✅   |    -    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **service**   |   -   |   -    |    -    |   ✅   |    -    | ✅  |    ✅     |  ✅  |    -     |  -  |
+| **provider**  |   -   |   -    |    -    |   ✅   |   ✅    | ✅  |    ✅     |  ✅  |    -     | ✅  |
+| **lib**       |   -   |   -    |    -    |   -    |    -    | ✅  |     -     |  ✅  |    -     |  -  |
+| **validator** |   -   |   -    |    -    |   -    |    -    |  -  |    ✅     |  ✅  |    -     |  -  |
+| **ui**        |   -   |   -    |    -    |   -    |    -    | ✅  |     -     |  -   |    -     |  -  |
+
+> 🟡 `feature → feature` 는 capture된 도메인명이 같을 때만 허용. 도메인 간 횡단 import 금지.
+
+### 17.4 ESLint 설정 (eslint.config.js 보강)
+
+```javascript
+import js from "@eslint/js";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import boundaries from "eslint-plugin-boundaries";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  { ignores: ["dist/"] },
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+      boundaries,
+    },
+    settings: {
+      "boundaries/include": ["src/**/*"],
+      "boundaries/elements": [
+        { type: "ui",        pattern: "src/components/ui/**" },
+        { type: "route",     pattern: "src/routes/*/**" },
+        { type: "widget",    pattern: "src/widgets/*/**" },
+        { type: "feature",   pattern: "src/features/*/**", capture: ["domain"] },
+        { type: "shared",    pattern: "src/shared/**" },
+        { type: "service",   pattern: "src/services/**" },
+        { type: "lib",       pattern: "src/libs/**" },
+        { type: "validator", pattern: "src/validators/**" },
+        { type: "type",      pattern: "src/types/**" },
+        { type: "provider",  pattern: "src/providers/**" },
+      ],
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
+      "boundaries/no-unknown": "error",
+      "boundaries/no-unknown-files": "error",
+      "boundaries/element-types": [
+        "error",
+        {
+          default: "disallow",
+          rules: [
+            { from: "route",     allow: ["widget", "feature", "shared", "service", "lib", "validator", "type", "provider", "ui"] },
+            { from: "widget",    allow: ["feature", "shared", "service", "lib", "validator", "type", "ui"] },
+            // 같은 도메인의 feature 만 import 가능
+            {
+              from: "feature",
+              allow: [
+                ["feature", { domain: "${from.domain}" }],
+                "shared", "service", "lib", "validator", "type", "ui",
+              ],
+            },
+            { from: "shared",    allow: ["shared", "lib", "validator", "type", "ui"] },
+            { from: "service",   allow: ["shared", "lib", "validator", "type"] },
+            { from: "provider",  allow: ["shared", "service", "lib", "validator", "type", "ui"] },
+            { from: "lib",       allow: ["lib", "type"] },
+            { from: "validator", allow: ["validator", "type"] },
+            { from: "ui",        allow: ["lib"] },
+          ],
+        },
+      ],
+    },
+  },
+);
+```
+
+### 17.5 위반 시 해결 가이드
+
+- ❌ `feature/tribe → feature/challenge` 직접 import → ✅ 공통 로직을 `shared/` 로 추출하거나 상위 `widget`에서 두 feature를 조합
+- ❌ `shared → feature` import → ✅ 의존성 역전 (shared가 인터페이스 정의, feature가 구현)
+- ❌ `service → feature` import → ✅ service는 도메인을 모름. 호출자에서 조합
+- ❌ `lib → shared` import → ✅ libs는 leaf. 도메인/공통 코드를 import 금지
